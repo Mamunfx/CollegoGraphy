@@ -46,16 +46,19 @@ const Navbar = () => {
           </Link>
           <ul className="menu menu-horizontal px-1  text-lg">
             <li>
-              <Link href={"/"}>Colleges</Link>
+              <Link href={"/colleges"}>Colleges</Link>
             </li>
             <li>
-              <Link href={"/"} >Admission</Link>
+              <Link href={"/admission"} >Admission</Link>
             </li>
             <li>
-              <Link href={"/"} >My college</Link>
+              <Link href={"/myCollege"} >My college</Link>
             </li>
             <li>
-              <Link href={"/"} >Sign up</Link>
+              <Link href={"/login"} >Sign in</Link>
+            </li>
+            <li>
+              <Link href={"/register"} >Sign up</Link>
             </li>
 
           </ul>
