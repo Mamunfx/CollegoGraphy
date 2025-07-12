@@ -55,10 +55,10 @@ const Navbar = () => {
               <Link href={"/myCollege"} >My college</Link>
             </li>
             <li>
-              <Link href={"/login"} >Sign in</Link>
+              <Link href={"/auth/signin"} >Sign in</Link>
             </li>
             <li>
-              <Link href={"/register"} >Sign up</Link>
+              <Link href={"/auth/register"} >Sign up</Link>
             </li>
 
           </ul>

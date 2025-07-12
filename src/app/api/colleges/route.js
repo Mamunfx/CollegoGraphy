@@ -1,5 +1,6 @@
 import clientPromise from "../../../../lib/mongodb";
 
+
 export async function GET() {
   const client = await clientPromise;
   const db = client.db();
@@ -16,3 +17,4 @@ export async function POST(request) {
   const insertedCollege = await db.collection("colleges").findOne({ _id: result.insertedId });
   return Response.json(insertedCollege);
 }
+
