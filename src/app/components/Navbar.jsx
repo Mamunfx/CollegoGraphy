@@ -1,5 +1,8 @@
+"use client"
+import { useSession,signOut } from "next-auth/react";
 import Link from "next/link";
 const Navbar = () => {
+  const { data: session, status } = useSession();
   return (
     <div className='w-11/12 mx-auto'>
       <div className="navbar bg-base-100 justify-center mt-6">
@@ -24,15 +27,35 @@ const Navbar = () => {
             </div>
             <ul
               tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow text-lg font-bold"
             >
-            <li>
-              <Link href={"/"}>Products</Link>
+             <li>
+              <Link href={"/colleges"} >Colleges</Link>
+            </li>
+            {
+              status === "authenticated" ? 
+               <> <li>
+              <Link href={"/admission"} >Admission</Link>
             </li>
             <li>
-              <Link href={"/"} >Pricing</Link>
+              <Link href={"/myCollege"} >My college</Link>
             </li>
+            <li>
+              <Link href={"/dashboard"} >Profile</Link>
+            </li>
+            <li>
+             <button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button>
+            </li></>
 
+              
+              : <><li>
+              <Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link>
+            </li>
+            <li>
+              <Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link>
+            </li></>
+            }
+            
             </ul>
           </div>
          <Link href={"/"}>
@@ -48,24 +71,38 @@ const Navbar = () => {
             <li>
               <Link href={"/colleges"}>Colleges</Link>
             </li>
-            <li>
+            {
+              status === "authenticated" ? 
+               <> <li>
               <Link href={"/admission"} >Admission</Link>
             </li>
             <li>
               <Link href={"/myCollege"} >My college</Link>
             </li>
             <li>
-              <Link href={"/auth/signin"} >Sign in</Link>
+              <Link href={"/dashboard"} >Profile</Link>
             </li>
             <li>
-              <Link href={"/auth/register"} >Sign up</Link>
-            </li>
+             <button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button>
+            </li></>
 
+              
+              : <><li>
+              <Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link>
+            </li>
+            <li>
+              <Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link>
+            </li></>
+            }
+            
           </ul>
         </div>
       
 <div className="navbar-end lg:hidden">
-    <a className="btn bg-primary border-none text-white">Sign up</a>
+    {status === "authenticated"?
+      <button className="btn" onClick={() => signOut()}>Sign out</button>
+      : <Link href={"/auth/signin"} ><button className="btn">Sign in  </button></Link>
+    }
   </div>
 
       </div>

@@ -33,7 +33,6 @@ export async function POST(request) {
         headers: { "Content-Type": "application/json" },
       });
     }
-
     const existingUser = await db.collection("users").findOne({ userEmail: userEmail });
     if (existingUser) {
       return new Response(JSON.stringify({ error: "User with this email already exists" }), {
@@ -70,7 +69,6 @@ export async function PATCH(request, { params }) {
   const client = await clientPromise;
   const db = client.db();
   const userEmailToUpdate = params.email;
-
   try {
     const body = await request.json();
     if (body.userEmail) {
