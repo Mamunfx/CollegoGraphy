@@ -1,93 +1,150 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom"; // For the modal
+import { createPortal } from "react-dom";
 
 export default function AdmissionPage() {
   const [colleges, setColleges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCollege, setSelectedCollege] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+  const [selectedCollegeToApply, setSelectedCollegeToApply] = useState(null);
 
-  // Form state for the application modal
-  const [applicantName, setApplicantName] = useState("");
-  const [applicantEmail, setApplicantEmail] = useState("");
-  const [applicationDate, setApplicationDate] = useState("");
-  const [previousEducation, setPreviousEducation] = useState("");
-  const [gpa, setGpa] = useState("");
-  const [personalStatement, setPersonalStatement] = useState("");
-  const [collegeReview, setCollegeReview] = useState(""); // New state for college review
+  const [yourFullName, setYourFullName] = useState("");
+  const [yourEmail, setYourEmail] = useState("");
+  const [dateOfApplication, setDateOfApplication] = useState("");
+  const [lastDegreeEarned, setLastDegreeEarned] = useState("");
+  const [yourGpa, setYourGpa] = useState("");
+  const [yourPersonalStatement, setYourPersonalStatement] = useState("");
+  const [yourCollegeReview, setYourCollegeReview] = useState("");
+  const [yourReviewRating, setYourReviewRating] = useState("");
 
   useEffect(() => {
-    async function fetchColleges() {
-      const res = await fetch("/api/colleges");
-      const data = await res.json();
-      setColleges(data);
-      setLoading(false);
+    async function getColleges() {
+      try {
+        const response = await fetch("/api/colleges");
+        const collegeData = await response.json();
+        setColleges(collegeData);
+      } catch (error) {
+        console.error("Failed to load colleges:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    fetchColleges();
+    getColleges();
   }, []);
 
-  const handleApplyClick = (college) => {
-    setSelectedCollege(college);
-    setIsModalOpen(true);
+  const initiateApplication = (college) => {
+    setSelectedCollegeToApply(college);
+    setIsApplicationModalOpen(true);
+    setYourCollegeReview("");
+    setYourReviewRating("");
   };
 
-  const handleSubmitApplication = async (e) => {
-    e.preventDefault();
+  const sendApplication = async (event) => {
+    event.preventDefault();
+    if (!selectedCollegeToApply) return;
 
-    if (!selectedCollege) return;
+    let existingCollegeReviews = [];
+    try {
+      const collegeDetailsResponse = await fetch(
+        `/api/colleges/${selectedCollegeToApply._id}`
+      );
+      if (collegeDetailsResponse.ok) {
+        const collegeDetails = await collegeDetailsResponse.json();
+        if (collegeDetails.reviews && Array.isArray(collegeDetails.reviews)) {
+          existingCollegeReviews = [...collegeDetails.reviews];
+        }
+      } else {
+        console.warn(
+          `Could not get reviews for ${selectedCollegeToApply.name}.`
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching college reviews:", error);
+    }
 
-    const applicationData = {
-      collegeId: selectedCollege._id,
-      collegeName: selectedCollege.name,
-      collegeImageSrc: selectedCollege.image_src, // Added college image source
-      collegeLogo: selectedCollege.logo,           // Added college logo
-      applicantName,
-      applicantEmail,
-      applicationDate,
-      previousEducation,
-      gpa: parseFloat(gpa), // Ensure GPA is stored as a number
-      personalStatement,
-      collegeReview, // Added college review
+    let newApplicantReview = null;
+    if (yourCollegeReview.trim() !== "") {
+      newApplicantReview = {
+        reviewerName: yourFullName,
+        reviewerEmail: yourEmail,
+        comment: yourCollegeReview,
+        rating: yourReviewRating ? parseFloat(yourReviewRating) : null,
+        createdAt: new Date().toISOString(),
+        isFromCurrentApplicant: true,
+      };
+    }
+
+    let combinedReviews = [...existingCollegeReviews];
+
+    if (newApplicantReview) {
+      const reviewIdentifier = `${newApplicantReview.reviewerEmail}-${newApplicantReview.comment}`;
+      const reviewIndex = combinedReviews.findIndex(
+        (review) => `${review.reviewerEmail}-${review.comment}` === reviewIdentifier
+      );
+
+      if (reviewIndex !== -1) {
+        combinedReviews[reviewIndex] = newApplicantReview;
+      } else {
+        combinedReviews.push(newApplicantReview);
+      }
+    }
+
+    combinedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const submittedApplicationData = {
+      collegeId: selectedCollegeToApply._id,
+      collegeName: selectedCollegeToApply.name,
+      collegeImageSrc: selectedCollegeToApply.image_src,
+      collegeLogo: selectedCollegeToApply.logo,
+      applicantName: yourFullName,
+      applicantEmail: yourEmail,
+      applicationDate: dateOfApplication,
+      previousEducation: lastDegreeEarned,
+      gpa: parseFloat(yourGpa),
+      personalStatement: yourPersonalStatement,
+      allCollegeReviews: combinedReviews,
     };
 
     try {
-      const res = await fetch("/api/application", {
+      const submissionResponse = await fetch("/api/application", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(applicationData),
+        body: JSON.stringify(submittedApplicationData),
       });
 
-      if (res.ok) {
-        alert(`Application Submitted Successfully! 🎉\nYour application to ${selectedCollege.name} has been received.`);
-        setIsModalOpen(false);
-        // Reset form fields
-        setApplicantName("");
-        setApplicantEmail("");
-        setApplicationDate("");
-        setPreviousEducation("");
-        setGpa("");
-        setPersonalStatement("");
-        setCollegeReview(""); // Reset college review
+      if (submissionResponse.ok) {
+        alert(`Your application to ${selectedCollegeToApply.name} has been sent!`);
+        setIsApplicationModalOpen(false);
+        setYourFullName("");
+        setYourEmail("");
+        setDateOfApplication("");
+        setLastDegreeEarned("");
+        setYourGpa("");
+        setYourPersonalStatement("");
+        setYourCollegeReview("");
+        setYourReviewRating("");
       } else {
-        const errorData = await res.json();
-        alert(`Application Failed 😞\n${errorData.message || "Something went wrong. Please try again."}`);
+        const errorDetails = await submissionResponse.json();
+        alert(
+          `Application failed: ${
+            errorDetails.message || "Something went wrong. Please try again."
+          }`
+        );
       }
     } catch (error) {
-      console.error("Error submitting application:", error);
-      alert("Network Error 🔌\nCould not connect to the server. Please check your internet connection.");
+      console.error("Network error during application submission:", error);
+      alert("Could not connect to the server. Check your internet and try again.");
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="w-full h-[60vh] flex items-center justify-center bg-white">
-        <span className="text-xl text-gray-500">Loading colleges for admission...</span>
+        <span className="text-xl text-gray-500">Loading colleges...</span>
       </div>
     );
   }
@@ -95,14 +152,14 @@ export default function AdmissionPage() {
   return (
     <div className="max-w-6xl mx-auto py-12 px-4 bg-white min-h-screen">
       <h1 className="text-4xl font-extrabold text-center mb-10 text-black tracking-tight">
-        Apply for Admission 🎓
+        Ready to Apply
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {colleges.map((college) => (
           <div
             key={college._id}
             className="card bg-base-100 shadow-md compact cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            onClick={() => handleApplyClick(college)}
+            onClick={() => initiateApplication(college)}
           >
             <figure className="h-48 relative">
               <Image
@@ -116,7 +173,7 @@ export default function AdmissionPage() {
             <div className="card-body">
               <div className="flex items-center gap-3 mb-3">
                 <div className="avatar">
-                  <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full ring ring-offset-base-100 ring-offset-2 flex items-center justify-center">
                     <Image
                       src={college.logo}
                       alt={`${college.name} logo`}
@@ -131,14 +188,15 @@ export default function AdmissionPage() {
                 </h2>
               </div>
               <p className="text-gray-600 text-sm mb-4">
-                Admission Date: <span className="font-medium">{college.admission_date}</span>
+                Admission Date:{" "}
+                <span className="font-medium">{college.admission_date}</span>
               </p>
               <div className="card-actions justify-end">
                 <button
-                  className="btn btn-primary w-full"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent card onClick from firing
-                    handleApplyClick(college);
+                  className="btn bg-black text-white rounded-full w-full"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    initiateApplication(college);
                   }}
                 >
                   Apply Now
@@ -149,120 +207,136 @@ export default function AdmissionPage() {
         ))}
       </div>
 
-      {/* DaisyUI Modal */}
-      {isModalOpen && createPortal(
-        <dialog id="admission_modal" className="modal" open={isModalOpen}>
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Apply to {selectedCollege?.name}</h3>
-            <p className="py-4 text-sm text-gray-600">Fill in your details to apply for admission.</p>
-            <form onSubmit={handleSubmitApplication} className="grid gap-4 py-4">
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Full Name</span>
+      {isApplicationModalOpen &&
+        createPortal(
+          <dialog id="admission_modal" className="modal" open={isApplicationModalOpen}>
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Applying to {selectedCollegeToApply?.name}</h3>
+              <p className="py-4 text-sm text-gray-600">
+                Please provide your details to complete the application.
+              </p>
+              <form onSubmit={sendApplication} className="grid gap-4 py-4">
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Your Full Name</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Your full name"
+                    className="input input-bordered w-full"
+                    value={yourFullName}
+                    onChange={(e) => setYourFullName(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Your Email</span>
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="your@example.com"
+                    className="input input-bordered w-full"
+                    value={yourEmail}
+                    onChange={(e) => setYourEmail(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Application Date</span>
+                  </div>
+                  <input
+                    type="date"
+                    className="input input-bordered w-full"
+                    value={dateOfApplication}
+                    onChange={(e) => setDateOfApplication(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Your Last Degree</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g., Bachelor of Arts"
+                    className="input input-bordered w-full"
+                    value={lastDegreeEarned}
+                    onChange={(e) => setLastDegreeEarned(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Your GPA/CGPA</span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g., 3.50"
+                    className="input input-bordered w-full"
+                    value={yourGpa}
+                    onChange={(e) => setYourGpa(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Personal Statement</span>
+                  </div>
+                  <textarea
+                    className="textarea textarea-bordered h-24 w-full"
+                    placeholder="Tell us about your academic goals and why this college interests you..."
+                    value={yourPersonalStatement}
+                    onChange={(e) => setYourPersonalStatement(e.target.value)}
+                  ></textarea>
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">College Review (Optional)</span>
+                  </div>
+                  <textarea
+                    className="textarea textarea-bordered h-24 w-full"
+                    placeholder="Share your thoughts about this college..."
+                    value={yourCollegeReview}
+                    onChange={(e) => setYourCollegeReview(e.target.value)}
+                  ></textarea>
+                </label>
+                <label className="form-control w-full">
+                  <div className="label">
+                    <span className="label-text">Review Rating (Optional, 1-5)</span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    placeholder="e.g., 4"
+                    className="input input-bordered w-full"
+                    value={yourReviewRating}
+                    onChange={(e) => setYourReviewRating(e.target.value)}
+                  />
+                </label>
+                <div className="modal-action">
+                  <button type="submit" className="btn bg-black text-white rounded-full">
+                    Submit Application
+                  </button>
+                  <button
+                    type="button"
+                     className="btn rounded-full"
+                    onClick={() => setIsApplicationModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Your full name"
-                  className="input input-bordered w-full"
-                  value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Email</span>
-                </div>
-                <input
-                  type="email"
-                  placeholder="your@example.com"
-                  className="input input-bordered w-full"
-                  value={applicantEmail}
-                  onChange={(e) => setApplicantEmail(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Application Date</span>
-                </div>
-                <input
-                  type="date"
-                  className="input input-bordered w-full"
-                  value={applicationDate}
-                  onChange={(e) => setApplicationDate(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Last Degree</span>
-                </div>
-                <input
-                  type="text"
-                  placeholder="e.g., Bachelor of Science"
-                  className="input input-bordered w-full"
-                  value={previousEducation}
-                  onChange={(e) => setPreviousEducation(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">GPA/CGPA</span>
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g., 3.75"
-                  className="input input-bordered w-full"
-                  value={gpa}
-                  onChange={(e) => setGpa(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Personal Statement</span>
-                </div>
-                <textarea
-                  className="textarea textarea-bordered h-24 w-full"
-                  placeholder="Tell us about your academic goals and why you're interested in this college..."
-                  value={personalStatement}
-                  onChange={(e) => setPersonalStatement(e.target.value)}
-                ></textarea>
-              </label>
-              <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Your Review (Optional)</span>
-                </div>
-                <textarea
-                  className="textarea textarea-bordered h-24 w-full"
-                  placeholder="Share your thoughts about this college..."
-                  value={collegeReview}
-                  onChange={(e) => setCollegeReview(e.target.value)}
-                ></textarea>
-              </label>
-              <div className="modal-action">
-                <button type="submit" className="btn btn-success">
-                  Submit Application
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Close
-                </button>
-              </div>
+              </form>
+            </div>
+            <form method="dialog" className="modal-backdrop" onClick={() => setIsApplicationModalOpen(false)}>
+              <button>Close</button>
             </form>
-          </div>
-          <form method="dialog" className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-            <button>close</button>
-          </form>
-        </dialog>,
-        document.body // Portal the modal to the body to avoid z-index issues
-      )}
+          </dialog>,
+          document.body
+        )}
     </div>
   );
 }

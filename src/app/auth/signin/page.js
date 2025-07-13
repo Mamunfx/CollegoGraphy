@@ -1,4 +1,3 @@
-// my-auth-app/app/auth/signin/page.js
 "use client";
 
 import { signIn } from "next-auth/react";
@@ -113,7 +112,7 @@ export default function SignInPage() {
             onClick={() => signIn("google", { callbackUrl: "/" })}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
           >
-            <svg className="w-5 h-5 mr-2" aria-hidden="true" fill="currentColor" viewBox="0 0 1792 1792"><path d="M896 786l-203 129q-12 8-27 8-15 0-27-8-12-8-12-23v-128q0-15 12-23l203-129q12-8 27-8 15 0 27 8zm205-242l203-129q12-8 27-8 15 0 27 8l-203 129q-12 8-27 8-15 0-27-8zm-410 0l-203-129q-12-8-27-8-15 0-27 8l203 129q12 8 27 8 15 0 27-8zm205-242l203-129q12-8 27-8 15 0 27 8l-203 129q-12 8-27 8-15 0-27-8zm-410 0l-203-129q-12-8-27-8-15 0-27 8l203 129q12 8 27 8 15 0 27-8zm205-242l203-129q12-8 27-8 15 0 27 8l-203 129q-12 8-27 8-15 0-27-8zm-410 0l-203-129q-12-8-27-8-15 0-27 8l203 129q12 8 27 8 15 0 27-8z"></path></svg>
+            
             Sign In with Google
           </button>
 
@@ -121,7 +120,7 @@ export default function SignInPage() {
             onClick={() => signIn("github", { callbackUrl: "/" })}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
           >
-            <svg className="w-5 h-5 mr-2" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zm4.5 19h-1.5c-1.625 0-2.5.5-2.5 1.5v1h4v-2c0-1-1-1.5-2.5-1.5zm1.5-6c0-2.761-2.239-5-5-5s-5 2.239-5 5c0 1.381.5 2.625 1.5 3.5v1.5h7v-1.5c1-1 1.5-2.119 1.5-3.5zm-3-4c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3 3-1.343 3-3zm-6 9c.5-1 1.5-1.5 2.5-1.5h1.5c1 0 2.5.5 2.5 1.5v1h-7v-1z" clipRule="evenodd"/></svg>
+            
             Sign In with GitHub
           </button>
         </div>
