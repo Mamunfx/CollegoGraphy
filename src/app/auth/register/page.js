@@ -1,4 +1,4 @@
-"use client"; // This directive marks the component as a Client Component
+"use client";
 
 import React, { useState } from 'react';
 import { Mail, User, Image, Lock, Loader2 } from 'lucide-react';
@@ -15,7 +15,7 @@ const App = () => {
   const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
 
     setError('');
     setSuccess('');
@@ -33,13 +33,26 @@ const App = () => {
       return;
     }
 
-    setIsSubmitting(true); 
+    setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: email,
+          userName: fullName,
+          profilePictureUrl: profilePictureUrl,
+          password: password,
+        }),
+      });
 
-      if (email === 'error@example.com') {
-        throw new Error('It looks like that email is already registered. Please use a different one.');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed. Please try again.');
       }
 
       setSuccess('Success! Your account has been created. Welcome!');
@@ -53,7 +66,7 @@ const App = () => {
       console.error('Registration error:', err);
       setError(err.message || 'Something went wrong with your registration. Please give it another shot.');
     } finally {
-      setIsSubmitting(false); 
+      setIsSubmitting(false);
     }
   };
 
