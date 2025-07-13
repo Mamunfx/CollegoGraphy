@@ -1,3 +1,5 @@
+"use client"; // This directive marks the component as a Client Component
+
 import React, { useState } from 'react';
 import { Mail, User, Image, Lock, Loader2 } from 'lucide-react';
 
@@ -56,7 +58,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 font-inter bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center p-4 font-inter ">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300 hover:scale-[1.01] border border-gray-200">
         <h2 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">
           Create Your Account
