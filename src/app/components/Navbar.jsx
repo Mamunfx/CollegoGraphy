@@ -1,39 +1,10 @@
-"use client"
+"use client";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from 'react';
 
 const Navbar = () => {
   const { data: session, status } = useSession();
-  const [loadingSession, setLoadingSession] = useState(true);
 
-  useEffect(() => {
-    if (status !== "loading") {
-      setLoadingSession(false);
-    }
-  }, [status]);
-
-  if (loadingSession) {
-    return (
-      <div className='w-full h-20 flex justify-center items-center'>
-        <div className="session-spinner"></div>
-        <style jsx>{`
-          .session-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #000; /* Black spinner */
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
 
   return (
     <div className='w-11/12 mx-auto'>
@@ -63,20 +34,27 @@ const Navbar = () => {
               <li>
                 <Link href={"/colleges"} >Colleges</Link>
               </li>
-              {
-                status === "authenticated" ?
-                  <>
-                    <li><Link href={"/admission"} >Admission</Link></li>
-                    <li><Link href={"/myCollege"} >My college</Link></li>
-                    <li><Link href={"/dashboard"} >Profile</Link></li>
-                    <li><button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button></li>
-                  </>
-                  :
-                  <>
-                    <li><Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link></li>
-                    <li><Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link></li>
-                  </>
-              }
+              {status === "loading" ? (
+
+                <>
+                  <li><span className="text-gray-400">Loading...</span></li>
+                  <li><span className="text-gray-400">Loading...</span></li>
+                  <li><span className="text-gray-400">Loading...</span></li>
+                  <li><button className="btn btn-disabled bg-gray-200">Loading...</button></li>
+                </>
+              ) : status === "authenticated" ? (
+                <>
+                  <li><Link href={"/admission"} >Admission</Link></li>
+                  <li><Link href={"/myCollege"} >My college</Link></li>
+                  <li><Link href={"/dashboard"} >Profile</Link></li>
+                  <li><button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button></li>
+                </>
+              ) : ( 
+                <>
+                  <li><Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link></li>
+                  <li><Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link></li>
+                </>
+              )}
             </ul>
           </div>
           <Link href={"/"}>
@@ -92,28 +70,38 @@ const Navbar = () => {
             <li>
               <Link href={"/colleges"}>Colleges</Link>
             </li>
-            {
-              status === "authenticated" ?
-                <>
-                  <li><Link href={"/admission"} >Admission</Link></li>
-                  <li><Link href={"/myCollege"} >My college</Link></li>
-                  <li><Link href={"/dashboard"} >Profile</Link></li>
-                  <li><button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button></li>
-                </>
-                :
-                <>
-                  <li><Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link></li>
-                  <li><Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link></li>
-                </>
-            }
+            {status === "loading" ? (
+
+              <>
+                <li><span className="text-gray-400">Loading...</span></li>
+                <li><span className="text-gray-400">Loading...</span></li>
+                <li><span className="text-gray-400">Loading...</span></li>
+                <li><button className="btn btn-disabled bg-gray-200">Loading...</button></li>
+              </>
+            ) : status === "authenticated" ? (
+              <>
+                <li><Link href={"/admission"} >Admission</Link></li>
+                <li><Link href={"/myCollege"} >My college</Link></li>
+                <li><Link href={"/dashboard"} >Profile</Link></li>
+                <li><button className="btn bg-black text-white rounded-full" onClick={() => signOut()}>Sign out</button></li>
+              </>
+            ) : ( 
+              <>
+                <li><Link href={"/auth/signin"} ><button className="btn bg-black text-white rounded-full">Sign in</button></Link></li>
+                <li><Link href={"/auth/register"} ><button className="btn bg-black text-white rounded-full">Sign up</button></Link></li>
+              </>
+            )}
           </ul>
         </div>
 
         <div className="navbar-end lg:hidden">
-          {status === "authenticated" ?
+          {status === "loading" ? (
+            <button className="btn btn-disabled">Loading...</button>
+          ) : status === "authenticated" ? (
             <button className="btn" onClick={() => signOut()}>Sign out</button>
-            : <Link href={"/auth/signin"} ><button className="btn">Sign in</button></Link>
-          }
+          ) : (
+            <Link href={"/auth/signin"} ><button className="btn">Sign in</button></Link>
+          )}
         </div>
       </div>
     </div>

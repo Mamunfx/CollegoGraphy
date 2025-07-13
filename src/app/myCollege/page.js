@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react"; // Assuming NextAuth.js for session management
 
 export default function AppliedCollegesPage() {
   const [yourApplications, setYourApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]); // New state for filtered applications
   const [pageLoading, setPageLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
@@ -14,11 +16,17 @@ export default function AppliedCollegesPage() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewScore, setReviewScore] = useState("");
 
+  const { data: session, status } = useSession(); // Get session data
+
   const getYourApplications = async () => {
+    setPageLoading(true); // Ensure loading state is true when fetching
+    setFetchError(null); // Clear previous errors
+
     try {
-      const res = await fetch("/api/application");
+      const res = await fetch("/api/application"); // Fetch ALL applications
       if (res.ok) {
         const appData = await res.json();
+        // Store all applications, then filter
         setYourApplications(appData.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate)));
       } else {
         const problemData = await res.json();
@@ -28,13 +36,46 @@ export default function AppliedCollegesPage() {
       console.error("Network issue retrieving applications:", err);
       setFetchError("Can't connect to get your applications. Is your internet playing up?");
     } finally {
-      setPageLoading(false);
+      // setPageLoading(false); // Move this to useEffect after filtering
     }
   };
 
   useEffect(() => {
+    // Initial fetch of all applications
     getYourApplications();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
+
+  useEffect(() => {
+    // This effect runs whenever 'yourApplications' or 'session' changes
+    if (status === "loading") {
+      setPageLoading(true);
+      return;
+    }
+
+    if (fetchError) { // If there was a fetch error, stop loading and show error
+      setPageLoading(false);
+      return;
+    }
+
+    if (session?.user?.email) {
+      // Filter the applications if a user is logged in
+      const userEmail = session.user.email;
+      const filtered = yourApplications.filter(
+        (app) => app.applicantEmail === userEmail
+      );
+      setFilteredApplications(filtered);
+      setPageLoading(false);
+    } else if (status === "unauthenticated") {
+      // If no user is logged in, show an appropriate message
+      setFilteredApplications([]); // No applications to show
+      setFetchError("Please log in to view your applications.");
+      setPageLoading(false);
+    } else {
+      // If session is null (not loading, not unauthenticated, just no user yet),
+      // or if yourApplications isn't loaded yet, keep loading
+      setPageLoading(true); // Keep loading until session or applications are ready
+    }
+  }, [yourApplications, session, status, fetchError]); // Dependencies for filtering logic
 
   const openReviewForm = (application) => {
     setCurrentAppForReview(application);
@@ -58,8 +99,8 @@ export default function AppliedCollegesPage() {
     if (!currentAppForReview) return;
 
     const yourLatestReview = {
-      reviewerName: currentAppForReview.applicantName,
-      reviewerEmail: currentAppForReview.applicantEmail,
+      reviewerName: currentAppForReview.applicantName, // Note: This should ideally come from the session's user name
+      reviewerEmail: currentAppForReview.applicantEmail, // Note: This should ideally come from the session's user email
       comment: reviewComment,
       rating: reviewScore ? parseFloat(reviewScore) : null,
       createdAt: new Date().toISOString(),
@@ -95,7 +136,7 @@ export default function AppliedCollegesPage() {
         setReviewComment("");
         setReviewScore("");
         setCurrentAppForReview(null);
-        getYourApplications();
+        getYourApplications(); // Re-fetch all applications to update the UI
       } else {
         const problemData = await res.json();
         alert(`Oh! Failed to submit review : ${problemData.message || "Something didn't quite work. Please try again."}`);
@@ -133,13 +174,13 @@ export default function AppliedCollegesPage() {
         Your College Applications 
       </h1>
 
-      {yourApplications.length === 0 ? (
+      {filteredApplications.length === 0 ? (
         <div className="text-center text-gray-600 text-lg py-10">
-          Looks like you havenot applied to any colleges yet. Time to get applying!
+          Looks like you have not applied to any colleges yet. Time to get applying!
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-8">
-          {yourApplications.map((application) => (
+          {filteredApplications.map((application) => ( // Render filtered applications
             <div key={application._id} className="card lg:card-side bg-base-100 shadow-xl compact">
               {application.collegeImageSrc && (
                 <figure className="relative lg:w-1/3 w-full h-48 lg:h-auto">
@@ -157,7 +198,7 @@ export default function AppliedCollegesPage() {
                 <div className="flex items-center gap-4 mb-4">
                   {application.collegeLogo && (
                     <div className="avatar">
-                      <div className="w-16 h-16 rounded-full ring  ring-offset-base-100 ring-offset-2 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full ring  ring-offset-base-100 ring-offset-2 flex items-center justify-center">
                         <Image
                           src={application.collegeLogo}
                           alt={`${application.collegeName} logo`}
@@ -234,7 +275,7 @@ export default function AppliedCollegesPage() {
 
                 <div className="card-actions justify-end mt-4">
                   <button
-                    className="btn  bg-black text-white rounded-full"
+                    className="btn  bg-black text-white rounded-full"
                     onClick={() => openReviewForm(application)}
                   >
                     Write/Edit Review
@@ -285,7 +326,7 @@ export default function AppliedCollegesPage() {
                 </button>
                 <button
                   type="button"
-                  className="btn  rounded-full"
+                  className="btn  rounded-full"
                   onClick={() => setIsReviewFormOpen(false)}
                 >
                   Not Now
